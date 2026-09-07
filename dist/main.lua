@@ -1867,6 +1867,9 @@ local aa = {
                     Version = D.Version,
                 }
             x.Window = E
+            if x.Minimizer then
+                E.Minimizer = x.Minimizer
+            end
             if D.Version then x.WindowVersion = D.Version end
             function x:SetVersion(newVersion)
                 x.WindowVersion = newVersion
@@ -1981,6 +1984,31 @@ local aa = {
                     end
                     table.clear(x._SBOverlays)
                 end
+                if x.Minimizer then
+                    pcall(function()
+                        if typeof(x.Minimizer) == "Instance" then
+                            x.Minimizer:Destroy()
+                        elseif type(x.Minimizer) == "table" and type(x.Minimizer.Destroy) == "function" then
+                            x.Minimizer:Destroy()
+                        end
+                    end)
+                    x.Minimizer = nil
+                end
+                if x.MinimizerGui and typeof(x.MinimizerGui) == "Instance" then
+                    pcall(function() x.MinimizerGui:Destroy() end)
+                    x.MinimizerGui = nil
+                end
+                pcall(function()
+                    local cg = game:GetService("CoreGui"):FindFirstChild("FluentMinimizerGui")
+                    if cg then cg:Destroy() end
+                end)
+                pcall(function()
+                    local lp = game:GetService("Players").LocalPlayer
+                    if lp and lp:FindFirstChild("PlayerGui") then
+                        local pg = lp.PlayerGui:FindFirstChild("FluentMinimizerGui")
+                        if pg then pg:Destroy() end
+                    end
+                end)
                 if x.ScrollGUI then
                     pcall(function() x.ScrollGUI:Destroy() end)
                     x.ScrollGUI = nil
@@ -2998,17 +3026,47 @@ local aa = {
                 playSound()
                 if x.Window then x.Window:Minimize() end
             end)
-            local mObj = {}
-            return setmetatable({}, {
+            local mObj = {
+                Gui = mGui,
+                ScreenGui = mGui,
+                Button = mBtn,
+                Frame = mBtn,
+                Destroy = function(self)
+                    if mGui then
+                        pcall(function() mGui:Destroy() end)
+                        mGui = nil
+                    end
+                end,
+            }
+            local minimizerInstance = setmetatable(mObj, {
                 __index = function(_, key)
-                    if key == "Visible" then return mGui.Enabled end
+                    if key == "Visible" then return mGui and mGui.Enabled or false end
+                    if key == "ScreenGui" or key == "Gui" then return mGui end
+                    if key == "Button" or key == "Frame" then return mBtn end
+                    if key == "Destroy" then
+                        return function()
+                            if mGui then
+                                pcall(function() mGui:Destroy() end)
+                                mGui = nil
+                            end
+                        end
+                    end
                     return mObj[key]
                 end,
                 __newindex = function(_, key, val)
-                    if key == "Visible" then mGui.Enabled = val
-                    else mObj[key] = val end
+                    if key == "Visible" then
+                        if mGui then mGui.Enabled = val end
+                    else
+                        mObj[key] = val
+                    end
                 end,
             })
+            x.Minimizer = minimizerInstance
+            x.MinimizerGui = mGui
+            if x.Window then
+                x.Window.Minimizer = minimizerInstance
+            end
+            return minimizerInstance
         end
 
         if getgenv then
@@ -6087,19 +6145,24 @@ local aa = {
                 UDim2.new(1, -4, 0, 4),
                 o.Frame,
                 function()
-                    p.Window:Dialog {
-                        Title = "Close",
-                        Content = "Are you sure you want to unload the interface?",
-                        Buttons = {
-                            {
-                                Title = "Yes",
-                                Callback = function()
-                                    p:Destroy()
-                                end
-                            },
-                            {Title = "No"}
+                    local win = n.Window
+                    if win and win.Dialog then
+                        win:Dialog {
+                            Title = "Close",
+                            Content = "Are you sure you want to unload the interface?",
+                            Buttons = {
+                                {
+                                    Title = "Yes",
+                                    Callback = function()
+                                        win:Destroy()
+                                    end
+                                },
+                                {Title = "No"}
+                            }
                         }
-                    }
+                    elseif win and win.Destroy then
+                        win:Destroy()
+                    end
                 end
             )
             o.MaxButton =
@@ -6108,7 +6171,9 @@ local aa = {
                 UDim2.new(1, -40, 0, 4),
                 o.Frame,
                 function()
-                    n.Window.Maximize(not n.Window.Maximized)
+                    if n.Window and n.Window.Maximize then
+                        n.Window.Maximize(not n.Window.Maximized)
+                    end
                 end
             )
             o.MinButton =
@@ -6117,7 +6182,9 @@ local aa = {
                 UDim2.new(1, -80, 0, 4),
                 o.Frame,
                 function()
-                    p.Window:Minimize()
+                    if n.Window and n.Window.Minimize then
+                        n.Window:Minimize()
+                    end
                 end
             )
             if getgenv().FluentDeviceBadgeEnabled then
@@ -7118,11 +7185,53 @@ local aa = {
                 if e(k).UseAcrylic then
                     v.AcrylicPaint.Model:Destroy()
                 end
+                local lib = e(k)
                 pcall(function()
-                    local ovs = e(k)._SBOverlays
+                    local ovs = lib._SBOverlays
                     if ovs then
                         for _, ov in ipairs(ovs) do pcall(function() ov:Destroy() end) end
                         table.clear(ovs)
+                    end
+                end)
+                if v.Minimizer then
+                    pcall(function()
+                        if typeof(v.Minimizer) == "Instance" then
+                            v.Minimizer:Destroy()
+                        elseif type(v.Minimizer) == "table" and type(v.Minimizer.Destroy) == "function" then
+                            v.Minimizer:Destroy()
+                        end
+                    end)
+                    v.Minimizer = nil
+                end
+                if lib then
+                    if lib.Minimizer then
+                        pcall(function()
+                            if typeof(lib.Minimizer) == "Instance" then
+                                lib.Minimizer:Destroy()
+                            elseif type(lib.Minimizer) == "table" and type(lib.Minimizer.Destroy) == "function" then
+                                lib.Minimizer:Destroy()
+                            end
+                        end)
+                        lib.Minimizer = nil
+                    end
+                    if lib.MinimizerGui and typeof(lib.MinimizerGui) == "Instance" then
+                        pcall(function() lib.MinimizerGui:Destroy() end)
+                        lib.MinimizerGui = nil
+                    end
+                    if lib.Folder and typeof(lib.Folder) == "Instance" then
+                        local fm = lib.Folder:FindFirstChild("FluentMinimizerGui")
+                        if fm then pcall(function() fm:Destroy() end) end
+                    end
+                end
+                pcall(function()
+                    local cg = game:GetService("CoreGui"):FindFirstChild("FluentMinimizerGui")
+                    if cg then cg:Destroy() end
+                end)
+                pcall(function()
+                    local lp = game:GetService("Players").LocalPlayer
+                    if lp and lp:FindFirstChild("PlayerGui") then
+                        local pg = lp.PlayerGui:FindFirstChild("FluentMinimizerGui")
+                        if pg then pg:Destroy() end
                     end
                 end)
                 v.Root:Destroy()

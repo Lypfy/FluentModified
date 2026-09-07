@@ -145,6 +145,50 @@ return function(Config)
 		Window = Window,
 	})
 
+	if Window.TitleBar then
+		if Window.TitleBar.CloseButton then
+			local closeBtn = Window.TitleBar.CloseButton
+			local target = (typeof(closeBtn) == "Instance" and closeBtn) or closeBtn.Frame
+			if target then
+				Creator.AddSignal(target.MouseButton1Click, function()
+					Window:Dialog({
+						Title = "Close",
+						Content = "Are you sure you want to unload the interface?",
+						Buttons = {
+							{
+								Title = "Yes",
+								Callback = function()
+									Window:Destroy()
+								end,
+							},
+							{ Title = "No" },
+						},
+					})
+				end)
+			end
+		end
+
+		if Window.TitleBar.MinButton then
+			local minBtn = Window.TitleBar.MinButton
+			local target = (typeof(minBtn) == "Instance" and minBtn) or minBtn.Frame
+			if target then
+				Creator.AddSignal(target.MouseButton1Click, function()
+					Window:Minimize()
+				end)
+			end
+		end
+
+		if Window.TitleBar.MaxButton then
+			local maxBtn = Window.TitleBar.MaxButton
+			local target = (typeof(maxBtn) == "Instance" and maxBtn) or maxBtn.Frame
+			if target then
+				Creator.AddSignal(target.MouseButton1Click, function()
+					Window.Maximize(not Window.Maximized)
+				end)
+			end
+		end
+	end
+
 	if require(Root).UseAcrylic then
 		Window.AcrylicPaint.AddParent(Window.Root)
 	end
@@ -342,6 +386,59 @@ return function(Config)
 		if require(Root).UseAcrylic then
 			Window.AcrylicPaint.Model:Destroy()
 		end
+
+		local lib = require(Root)
+		if lib and lib._SBOverlays then
+			for _, ov in ipairs(lib._SBOverlays) do
+				pcall(function() ov:Destroy() end)
+			end
+			table.clear(lib._SBOverlays)
+		end
+
+		if Window.Minimizer then
+			pcall(function()
+				if typeof(Window.Minimizer) == "Instance" then
+					Window.Minimizer:Destroy()
+				elseif type(Window.Minimizer) == "table" and type(Window.Minimizer.Destroy) == "function" then
+					Window.Minimizer:Destroy()
+				end
+			end)
+			Window.Minimizer = nil
+		end
+
+		if lib then
+			if lib.Minimizer then
+				pcall(function()
+					if typeof(lib.Minimizer) == "Instance" then
+						lib.Minimizer:Destroy()
+					elseif type(lib.Minimizer) == "table" and type(lib.Minimizer.Destroy) == "function" then
+						lib.Minimizer:Destroy()
+					end
+				end)
+				lib.Minimizer = nil
+			end
+			if lib.MinimizerGui and typeof(lib.MinimizerGui) == "Instance" then
+				pcall(function() lib.MinimizerGui:Destroy() end)
+				lib.MinimizerGui = nil
+			end
+			if lib.Folder and typeof(lib.Folder) == "Instance" then
+				local fm = lib.Folder:FindFirstChild("FluentMinimizerGui")
+				if fm then pcall(function() fm:Destroy() end) end
+			end
+		end
+
+		pcall(function()
+			local cg = game:GetService("CoreGui"):FindFirstChild("FluentMinimizerGui")
+			if cg then cg:Destroy() end
+		end)
+		pcall(function()
+			local lp = game:GetService("Players").LocalPlayer
+			if lp and lp:FindFirstChild("PlayerGui") then
+				local pg = lp.PlayerGui:FindFirstChild("FluentMinimizerGui")
+				if pg then pg:Destroy() end
+			end
+		end)
+
 		Window.Root:Destroy()
 	end
 

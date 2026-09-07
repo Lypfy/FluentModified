@@ -1872,6 +1872,9 @@ local ClosureBindings = {
                     Version = D.Version,
                 }
             Library.Window = E
+            if Library.Minimizer then
+                E.Minimizer = Library.Minimizer
+            end
             if D.Version then Library.WindowVersion = D.Version end
             function Library:SetVersion(newVersion)
                 Library.WindowVersion = newVersion
@@ -1986,6 +1989,31 @@ local ClosureBindings = {
                     end
                     table.clear(Library._SBOverlays)
                 end
+                if Library.Minimizer then
+                    pcall(function()
+                        if typeof(Library.Minimizer) == "Instance" then
+                            Library.Minimizer:Destroy()
+                        elseif type(Library.Minimizer) == "table" and type(Library.Minimizer.Destroy) == "function" then
+                            Library.Minimizer:Destroy()
+                        end
+                    end)
+                    Library.Minimizer = nil
+                end
+                if Library.MinimizerGui and typeof(Library.MinimizerGui) == "Instance" then
+                    pcall(function() Library.MinimizerGui:Destroy() end)
+                    Library.MinimizerGui = nil
+                end
+                pcall(function()
+                    local cg = game:GetService("CoreGui"):FindFirstChild("FluentMinimizerGui")
+                    if cg then cg:Destroy() end
+                end)
+                pcall(function()
+                    local lp = game:GetService("Players").LocalPlayer
+                    if lp and lp:FindFirstChild("PlayerGui") then
+                        local pg = lp.PlayerGui:FindFirstChild("FluentMinimizerGui")
+                        if pg then pg:Destroy() end
+                    end
+                end)
                 if Library.ScrollGUI then
                     pcall(function() Library.ScrollGUI:Destroy() end)
                     Library.ScrollGUI = nil
@@ -3003,17 +3031,47 @@ local ClosureBindings = {
                 playSound()
                 if Library.Window then Library.Window:Minimize() end
             end)
-            local mObj = {}
-            return setmetatable({}, {
+            local mObj = {
+                Gui = mGui,
+                ScreenGui = mGui,
+                Button = mBtn,
+                Frame = mBtn,
+                Destroy = function(self)
+                    if mGui then
+                        pcall(function() mGui:Destroy() end)
+                        mGui = nil
+                    end
+                end,
+            }
+            local minimizerInstance = setmetatable(mObj, {
                 __index = function(_, key)
-                    if key == "Visible" then return mGui.Enabled end
+                    if key == "Visible" then return mGui and mGui.Enabled or false end
+                    if key == "ScreenGui" or key == "Gui" then return mGui end
+                    if key == "Button" or key == "Frame" then return mBtn end
+                    if key == "Destroy" then
+                        return function()
+                            if mGui then
+                                pcall(function() mGui:Destroy() end)
+                                mGui = nil
+                            end
+                        end
+                    end
                     return mObj[key]
                 end,
                 __newindex = function(_, key, val)
-                    if key == "Visible" then mGui.Enabled = val
-                    else mObj[key] = val end
+                    if key == "Visible" then
+                        if mGui then mGui.Enabled = val end
+                    else
+                        mObj[key] = val
+                    end
                 end,
             })
+            Library.Minimizer = minimizerInstance
+            Library.MinimizerGui = mGui
+            if Library.Window then
+                Library.Window.Minimizer = minimizerInstance
+            end
+            return minimizerInstance
         end
 
         if getgenv then
@@ -6092,19 +6150,24 @@ local ClosureBindings = {
                 UDim2.new(1, -4, 0, 4),
                 o.Frame,
                 function()
-                    p.Window:Dialog {
-                        Title = "Close",
-                        Content = "Are you sure you want to unload the interface?",
-                        Buttons = {
-                            {
-                                Title = "Yes",
-                                Callback = function()
-                                    p:Destroy()
-                                end
-                            },
-                            {Title = "No"}
+                    local win = n.Window
+                    if win and win.Dialog then
+                        win:Dialog {
+                            Title = "Close",
+                            Content = "Are you sure you want to unload the interface?",
+                            Buttons = {
+                                {
+                                    Title = "Yes",
+                                    Callback = function()
+                                        win:Destroy()
+                                    end
+                                },
+                                {Title = "No"}
+                            }
                         }
-                    }
+                    elseif win and win.Destroy then
+                        win:Destroy()
+                    end
                 end
             )
             o.MaxButton =
@@ -6113,7 +6176,9 @@ local ClosureBindings = {
                 UDim2.new(1, -40, 0, 4),
                 o.Frame,
                 function()
-                    n.Window.Maximize(not n.Window.Maximized)
+                    if n.Window and n.Window.Maximize then
+                        n.Window.Maximize(not n.Window.Maximized)
+                    end
                 end
             )
             o.MinButton =
@@ -6122,7 +6187,9 @@ local ClosureBindings = {
                 UDim2.new(1, -80, 0, 4),
                 o.Frame,
                 function()
-                    p.Window:Minimize()
+                    if n.Window and n.Window.Minimize then
+                        n.Window:Minimize()
+                    end
                 end
             )
             if getgenv().FluentDeviceBadgeEnabled then
@@ -7123,11 +7190,53 @@ local ClosureBindings = {
                 if require(k).UseAcrylic then
                     v.AcrylicPaint.Model:Destroy()
                 end
+                local lib = require(k)
                 pcall(function()
-                    local ovs = require(k)._SBOverlays
+                    local ovs = lib._SBOverlays
                     if ovs then
                         for _, ov in ipairs(ovs) do pcall(function() ov:Destroy() end) end
                         table.clear(ovs)
+                    end
+                end)
+                if v.Minimizer then
+                    pcall(function()
+                        if typeof(v.Minimizer) == "Instance" then
+                            v.Minimizer:Destroy()
+                        elseif type(v.Minimizer) == "table" and type(v.Minimizer.Destroy) == "function" then
+                            v.Minimizer:Destroy()
+                        end
+                    end)
+                    v.Minimizer = nil
+                end
+                if lib then
+                    if lib.Minimizer then
+                        pcall(function()
+                            if typeof(lib.Minimizer) == "Instance" then
+                                lib.Minimizer:Destroy()
+                            elseif type(lib.Minimizer) == "table" and type(lib.Minimizer.Destroy) == "function" then
+                                lib.Minimizer:Destroy()
+                            end
+                        end)
+                        lib.Minimizer = nil
+                    end
+                    if lib.MinimizerGui and typeof(lib.MinimizerGui) == "Instance" then
+                        pcall(function() lib.MinimizerGui:Destroy() end)
+                        lib.MinimizerGui = nil
+                    end
+                    if lib.Folder and typeof(lib.Folder) == "Instance" then
+                        local fm = lib.Folder:FindFirstChild("FluentMinimizerGui")
+                        if fm then pcall(function() fm:Destroy() end) end
+                    end
+                end
+                pcall(function()
+                    local cg = game:GetService("CoreGui"):FindFirstChild("FluentMinimizerGui")
+                    if cg then cg:Destroy() end
+                end)
+                pcall(function()
+                    local lp = game:GetService("Players").LocalPlayer
+                    if lp and lp:FindFirstChild("PlayerGui") then
+                        local pg = lp.PlayerGui:FindFirstChild("FluentMinimizerGui")
+                        if pg then pg:Destroy() end
                     end
                 end)
                 v.Root:Destroy()
