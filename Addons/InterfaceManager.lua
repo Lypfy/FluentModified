@@ -43,10 +43,6 @@ function InterfaceManager:LoadSettings()
             end
         end
     end
-    if InterfaceManager.Settings.Animated ~= nil then
-        getgenv().ShineEnabled = InterfaceManager.Settings.Animated
-        if self.Library then self.Library.ShineEnabled = InterfaceManager.Settings.Animated end
-    end
     local lib=self.Library
     if lib and lib.Window and lib.Window.TabsAPI then
         pcall(function() lib.Window.TabsAPI:ReapplyFavoriteOrder() end)
@@ -166,14 +162,9 @@ function InterfaceManager:BuildInterfaceSection(tab)
     })
     InterfaceTheme:SetValue(Settings.Theme)
     section:AddToggle("AnimationToggle",{Title="Animated Window",Description="Enables shine/stroke animation on theme.",Icon="solar/stars-bold",Default=Settings.Animated,Callback=function(Value)
-        getgenv().ShineEnabled=Value; Library.ShineEnabled=Value; Settings.Animated=Value; InterfaceManager:SaveSettings()
-        if Library.Theme and type(Library.Theme)=="table" then
-            Library.Theme.ShineEnabled=Value
-            Library.Theme.StrokeShine=Value
-        end
+        getgenv().ShineEnabled=Value; Settings.Animated=Value; InterfaceManager:SaveSettings()
         Library:SetTheme(Library.Theme)
         if getgenv()._FluentProRefreshOpenDropdownShine then getgenv()._FluentProRefreshOpenDropdownShine() end
-        if Library._RefreshOpenDropdownShine then Library._RefreshOpenDropdownShine() end
     end})
     section:AddToggle("TransparentToggle",{Title="Transparency",Description="Makes the interface transparent.",Icon="solar/eye-bold",Default=Settings.Transparency,Callback=function(Value)
         Library:ToggleTransparency(Value); Settings.Transparency=Value; InterfaceManager:SaveSettings()

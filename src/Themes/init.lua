@@ -6,7 +6,6 @@ local Themes = {
 		"NeonPurple",
 		"DeepViolet",
 		"BloodRed",
-		"LarpBlack",
 	},
 }
 

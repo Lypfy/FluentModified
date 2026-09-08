@@ -17,10 +17,6 @@ local New = Creator.New
 return function(Config)
 	local Library = require(Root)
 
-	if Config.Animated ~= nil then
-		getgenv().ShineEnabled = Config.Animated
-	end
-
 	local Window = {
 		Minimized = false,
 		Maximized = false,
