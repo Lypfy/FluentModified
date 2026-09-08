@@ -1,6 +1,3 @@
-local getAsset = getcustomasset or getsynasset
-local bgImage = (getAsset and getAsset("L.jpg")) or "L.jpg"
-
 return {
     Name = "LarpBlack",
     Accent = Color3.fromRGB(250, 250, 250),
@@ -63,7 +60,7 @@ return {
     StrokeShine = getgenv().ShineEnabled,
     StrokeDark = Color3.fromRGB(28, 28, 32),
 
-    Background = bgImage,
+    Background = "rbxassetid://101267249045410",
     BackgroundTransparency = 0.05,
     ThemeAccentColors = { Color3.fromRGB(250, 250, 250), Color3.fromRGB(30, 30, 38) },
 }
